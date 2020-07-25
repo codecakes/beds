@@ -17,7 +17,7 @@ from typing import Union, NewType
 import bs4
 import scraperwiki
 import sqlalchemy
-from settings import constants
+from settings.settings import constants
 from bs4 import BeautifulSoup
 
 I = int
