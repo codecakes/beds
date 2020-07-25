@@ -10,6 +10,7 @@ import functools
 import json
 import logging
 import os
+import sqlite3
 import time
 from collections import namedtuple
 from typing import Union, NewType
@@ -17,16 +18,17 @@ from typing import Union, NewType
 import bs4
 import scraperwiki
 import sqlalchemy
-from settings.settings import constants
 from bs4 import BeautifulSoup
+
+from settings import settings
 
 I = int
 Logger = logging.getLogger(name="multiprocess_log")
 Logger.setLevel(logging.DEBUG)
 
-print("constants", constants)
-for env_key in constants["ENV_DB_NAMES"]:
-    os.environ[env_key] = constants["SET_DB_NAME"]
+# Set all Env variable keys
+for env_key in settings.ENV_DB_NAMES:
+    os.environ[env_key] = settings.DB_NAME_DEFAULT
 
 StrIntType = NewType("StrIntType", Union[str, int])
 
@@ -64,12 +66,23 @@ REPLACE_CHARS = {"(": "", ")": ""}
 sanitize_str = lambda line: line.translate(str.maketrans(REPLACE_CHARS))
 
 
+def create_conn(db_filename: str):
+    try:
+        conn = sqlite3.connect(db_filename)
+    except sqlite3.Error as e:
+        Logger.error(e)
+        raise e
+    finally:
+        conn.close()
+
+
 def scrape_beds():
-    html_page = scraperwiki.scrape(constants["URL"])
+    html_page = scraperwiki.scrape(settings.URL)
     soup = BeautifulSoup(html_page, "lxml")
     divs = soup.find_all("div", attrs={"id": TBL_DIVS})
     tables = [div.findChild("table") for div in divs]
     unique_keys = ["hid", "category"]
+    create_conn(settings.DB_NAME)
     for doc in map(scrape_tables, tables):
         # print("doc")
         # print(doc)
