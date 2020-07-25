@@ -74,9 +74,7 @@ def scrape_beds():
         # print("doc")
         # print(doc)
         try:
-            scraperwiki.sqlite.save(
-                unique_keys=unique_keys, data=doc, table_name="data"
-            )
+            scraperwiki.sqlite.save(unique_keys=unique_keys, data=doc)
         except sqlalchemy.exc.InterfaceError as e:
             print(f"error in doc for {doc['category']}")
             # print(doc)
