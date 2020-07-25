@@ -24,7 +24,8 @@ I = int
 Logger = logging.getLogger(name="multiprocess_log")
 Logger.setLevel(logging.DEBUG)
 
-for env_key in constants["ENV_DB_NAME"]:
+print("constants", constants)
+for env_key in constants["ENV_DB_NAMES"]:
     os.environ[env_key] = constants["SET_DB_NAME"]
 
 StrIntType = NewType("StrIntType", Union[str, int])
