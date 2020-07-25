@@ -6,16 +6,26 @@
 # # An arbitrary query against the database
 # scraperwiki.sql.select("* from data where 'name'='peter'")
 
-import logging
-import time
 import functools
-import bs4
-import scraperwiki
-from bs4 import BeautifulSoup
+import json
+import logging
+import os
+import time
 from collections import namedtuple
 from typing import Union, NewType
+
+import bs4
+import scraperwiki
 import sqlalchemy
-import json
+from settings import constants
+from bs4 import BeautifulSoup
+
+I = int
+Logger = logging.getLogger(name="multiprocess_log")
+Logger.setLevel(logging.DEBUG)
+
+for env_key in constants["ENV_DB_NAME"]:
+    os.environ[env_key] = constants["SET_DB_NAME"]
 
 StrIntType = NewType("StrIntType", Union[str, int])
 
@@ -39,11 +49,6 @@ NAMED_COLS = (
 COLS_SIZE = len(NAMED_COLS)
 BedsTuple = namedtuple("Beds", NAMED_COLS)
 
-# Url to scan
-URL = "https://apps.bbmpgov.in/covidbedstatus/"
-I = int
-Logger = logging.getLogger(name="multiprocess_log")
-
 # Specific tables are under specific div ids
 TBL_DIVS = (
     "private_hospital",
@@ -54,11 +59,12 @@ TBL_DIVS = (
 )
 
 REPLACE_CHARS = {"(": "", ")": ""}
+
 sanitize_str = lambda line: line.translate(str.maketrans(REPLACE_CHARS))
 
 
 def scrape_beds():
-    html_page = scraperwiki.scrape(URL)
+    html_page = scraperwiki.scrape(constants["URL"])
     soup = BeautifulSoup(html_page, "lxml")
     divs = soup.find_all("div", attrs={"id": TBL_DIVS})
     tables = [div.findChild("table") for div in divs]
@@ -122,11 +128,14 @@ def _multi_process_scrape(
     if facility_type.isdigit():
         beds = [facility_type] + beds
     beds = beds[:COLS_SIZE]
+    # some tables may have last field "net_allot" missing
+    if len(beds) != COLS_SIZE:
+        beds += [sum(I(num) for num in beds[-4:])]
     try:
         beds_tuple = BedsTuple(*beds)
     except TypeError as e:
-        Logger.info(f"category={category}")
-        Logger.info("snum, facility_type, *beds", snum, facility_type, beds)
+        Logger.error(f"category={category}")
+        Logger.error("snum, facility_type, *beds", snum, facility_type, beds)
         raise e
     if not (snum and snum.isdigit()):
         doc.update(
