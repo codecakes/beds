@@ -27,6 +27,8 @@ Logger = logging.getLogger(name="multiprocess_log")
 Logger.setLevel(logging.DEBUG)
 
 # Set all Env variable keys
+Logger.info("setting environ keys")
+Logger.info(f"DB_NAME_DEFAULT is {settings.DB_NAME_DEFAULT}")
 for env_key in settings.ENV_DB_NAMES:
     os.environ[env_key] = settings.DB_NAME_DEFAULT
 
@@ -84,13 +86,10 @@ def scrape_beds():
     unique_keys = ["hid", "category"]
     create_conn(settings.DB_NAME)
     for doc in map(scrape_tables, tables):
-        # print("doc")
-        # print(doc)
         try:
             scraperwiki.sqlite.save(unique_keys=unique_keys, data=doc)
         except sqlalchemy.exc.InterfaceError as e:
-            print(f"error in doc for {doc['category']}")
-            # print(doc)
+            Logger.error(f"error in doc for {doc['category']}")
             raise (e)
 
 
