@@ -197,11 +197,6 @@ def _multi_process_scrape(
         grand_available[0] += I(beds_tuple.net_allot)
 
 
-# You don't have to do things with the ScraperWiki and lxml libraries.
-# You can use whatever libraries you want: https://morph.io/documentation/python
-# All that matters is that your final data is written to an SQLite database
-# called "data.sqlite" in the current working directory which has at least a table
-# called "data".
 
-if __name__ == "__main__":
-    scrape_beds()
+# Run without checking main module.
+scrape_beds()
